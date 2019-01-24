@@ -16,12 +16,17 @@ if  [ $# -eq 0 ]; then
     echo "Please pass the mandatory arguments. To know about the required arguments type option -help"
     exit 1
 fi
+echo "---------------------------------------------------------------------------"
+echo "********** Printing Arguments and their values ****************************"
+echo "---------------------------------------------------------------------------"
+count=0;
 for ARGUMENT in "$@"
 do
 
     KEY=$(echo "$ARGUMENT" | cut -f1 -d=)
     VALUE=$(echo "$ARGUMENT" | cut -f2 -d=)
-    echo  $KEY $VALUE
+    count=$((count+1))
+    echo $count"." $KEY"=" $VALUE
     case "$KEY" in
             servername)
                if [ -z "${VALUE}" ];then
@@ -90,6 +95,9 @@ do
 
 done
 
+echo "--------------------------------------------------------------------------"
+echo "********** Checking for mandatory parameters *****************************"
+echo "--------------------------------------------------------------------------"
 # Checking for mandatory parameters, if not present
 counter=0
 MESSAGE="Please pass the following required parameters as arguments : "
@@ -98,7 +106,7 @@ if [ -z $servername ]; then
    if  [ $counter -eq 1 ]; then
 	echo $MESSAGE
    fi
-   echo $counter ". 'servername'"
+   echo $counter". 'servername'"
 fi
 if [ -z $username ]; then
    counter=$((counter+1))
@@ -157,23 +165,35 @@ if [ -z $metrictemplate ] && [ -z $logtemplate ]; then
   echo "Aleast one of the parameters 'metrictemplate' or 'logtemplate' is required"
   exit 1
 fi
+if  [ $counter -eq 0 ]; then
+  echo "All required parameters are specified properly."
+fi
 
+counter=0
+echo "---------------------------------------------------------------------------"
+echo "********** Setting optional parameters, if not specified by user **********"
+echo "---------------------------------------------------------------------------"
 # Setting optional parameters, if not specified by user
 if [ -z $minimumCanaryScore ];then
-   echo "Optional parameter 'minimumCanaryScore' is not specified in the arguments, assigning the default value to 70!"
+   counter=$((counter+1))
+   echo $counter". Optional parameter 'minimumCanaryScore' is not specified in the arguments, assigning the default value to 70!"
    minimumCanaryScore=70
 fi
 if [ -z $canaryResultScore ];then
-   echo "Value for parameter 'canaryResultScore' is not specified in the arguments, assigning the default value to 90!"
+   counter=$((counter+1))
+   echo $counter". Optional parameter 'canaryResultScore' is not specified in the arguments, assigning the default value to 90!"
    canaryResultScore=90
 fi
-
+echo "--------------------------------------------------------------------------"
+echo "********** Triggering the Analysis ***************************************"
+echo "--------------------------------------------------------------------------"
 url="http://$servername:8090/registerCanary"
+echo "Calling the URL : "$url
 jsondata="{\"application\":\"prodk8\", \"canaryConfig\":{ \"canaryAnalysisConfig\":{ \"beginCanaryAnalysisAfterMins\": \"0\",\"canaryAnalysisIntervalMins\" : \"$canaryAnalysisIntervalMins\",  \"lookbackMins\" : 0, \"name\" : \"metric-template:$metrictemplate;log-template:$logtemplate\", \"notificationHours\" : [ ], \"useLookback\" : false }, \"canaryHealthCheckHandler\" : {\"@class\" : \"com.netflix.spinnaker.mine.CanaryResultHealthCheckHandler\", \"minimumCanaryResultScore\" : \"$minimumCanaryScore\"}, \"canarySuccessCriteria\" : { \"canaryResultScore\" : \"$canaryResultScore\" },\"combinedCanaryResultStrategy\" : \"AGGREGATE\", \"lifetimeHours\" : \"$lifetimeHours\", \"name\" : \"$username\", \"application\" : \"prodk8\"}, \"canaryDeployments\" : [ { \"@class\" : \".CanaryTaskDeployment\", \"accountName\" : \"my-k8s-account\", \"baseline\" : \"$baseline\", \"baselineStartTimeMs\": "$baselineStartTimeMs", \"canary\" : \"$canary\", \"canaryStartTimeMs\": "$canaryStartTimeMs", \"type\" : \"cluster\" } ], \"watchers\" : [ ]}"
 
 echo "Request body : "
 echo $jsondata
 response=$(curl -H  "Content-Type:application/json"  -X POST -d "$jsondata" "$url")
-echo "Canary Id : $response"
 echo "Report URL : http://$servername:8161/opsmx-analysis/public/canaryAnalysis.html#/analysis/$response"
-
+echo "********** End of Analysis ***********************************************"
+echo "--------------------------------------------------------------------------"
