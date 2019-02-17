@@ -197,3 +197,5 @@ response=$(curl -H  "Content-Type:application/json"  -X POST -d "$jsondata" "$ur
 echo "Report URL : http://$servername:8161/opsmx-analysis/public/canaryAnalysis.html#/analysis/$response"
 echo "********** End of Analysis ***********************************************"
 echo "--------------------------------------------------------------------------"
+echo "Returning canary Id :"
+echo $response > canary_response_id_file
