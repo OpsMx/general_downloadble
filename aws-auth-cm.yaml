@@ -5,7 +5,7 @@
       namespace: kube-system
     data:
       mapRoles: |
-        - rolearn: arn:aws:iam::732813442182:role/SpinnakerAuthRole
+        - rolearn: <AWS Cluster Auth Role>
           username: system:node:{{EC2PrivateDNSName}}
           groups:
             - system:bootstrappers
