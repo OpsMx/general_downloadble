@@ -3,7 +3,7 @@
 usage="$(basename "$0")
 [-help]  -- Example to show how to pass relevant arguments.
 USAGE:
-$(basename "$0") servername=12.299.222.155 username=johndoe metrictemplate=metric-template-name logtemplate=log-template-name lifetimeHours=0.5 canaryAnalysisIntervalMins=30 baseline=1e8ecb994cbba canary=1e8ecb994cbba baselineStartTimeMs=1528139701000 canaryStartTimeMs=1528139701000 canaryResultScore=90 minimumCanaryScore=70"
+$(basename "$0") servername=12.299.222.155 application=testApp username=johndoe metrictemplate=metric-template-name logtemplate=log-template-name lifetimeHours=0.5 canaryAnalysisIntervalMins=30 baseline=1e8ecb994cbba canary=1e8ecb994cbba baselineStartTimeMs=1528139701000 canaryStartTimeMs=1528139701000 canaryResultScore=90 minimumCanaryScore=70"
 
 while getopts ':hhelp:' option; do
   case "$option" in
@@ -33,6 +33,11 @@ do
                  echo "Value for mandatory parameter 'servername' is not specified!"
                fi
             servername=${VALUE} ;;
+            application)
+               if [ -z "${VALUE}" ];then
+                 echo "Value for mandatory parameter 'application' name is not specified!"
+               fi
+            application=${VALUE} ;;
             canaryAnalysisIntervalMins)
                if [ -z "${VALUE}" ];then
                  echo "Value for mandatory parameter 'canaryAnalysisIntervalMins' is not specified!"
@@ -107,6 +112,13 @@ if [ -z $servername ]; then
 	echo $MESSAGE
    fi
    echo $counter". 'servername'"
+fi
+if [ -z $application ]; then
+   counter=$((counter+1))
+   if  [ $counter -eq 1 ]; then
+	echo $MESSAGE
+   fi
+   echo $counter". 'application'"
 fi
 if [ -z $username ]; then
    counter=$((counter+1))
@@ -187,9 +199,9 @@ fi
 echo "--------------------------------------------------------------------------"
 echo "********** Triggering the Analysis ***************************************"
 echo "--------------------------------------------------------------------------"
-url="http://$servername:8090/registerCanary"
+url="https://$servername:8090/registerCanary"
 echo "Calling the URL : "$url
-jsondata="{\"application\":\"prodk8\", \"canaryConfig\":{ \"canaryAnalysisConfig\":{ \"beginCanaryAnalysisAfterMins\": \"0\",\"canaryAnalysisIntervalMins\" : \"$canaryAnalysisIntervalMins\",  \"lookbackMins\" : 0, \"name\" : \"metric-template:$metrictemplate;log-template:$logtemplate\", \"notificationHours\" : [ ], \"useLookback\" : false }, \"canaryHealthCheckHandler\" : {\"@class\" : \"com.netflix.spinnaker.mine.CanaryResultHealthCheckHandler\", \"minimumCanaryResultScore\" : \"$minimumCanaryScore\"}, \"canarySuccessCriteria\" : { \"canaryResultScore\" : \"$canaryResultScore\" },\"combinedCanaryResultStrategy\" : \"AGGREGATE\", \"lifetimeHours\" : \"$lifetimeHours\", \"name\" : \"$username\", \"application\" : \"prodk8\"}, \"canaryDeployments\" : [ { \"@class\" : \".CanaryTaskDeployment\", \"accountName\" : \"my-k8s-account\", \"baseline\" : \"$baseline\", \"baselineStartTimeMs\": "$baselineStartTimeMs", \"canary\" : \"$canary\", \"canaryStartTimeMs\": "$canaryStartTimeMs", \"type\" : \"cluster\" } ], \"watchers\" : [ ]}"
+jsondata="{\"application\":\"$application\", \"canaryConfig\":{ \"canaryAnalysisConfig\":{ \"beginCanaryAnalysisAfterMins\": \"0\",\"canaryAnalysisIntervalMins\" : \"$canaryAnalysisIntervalMins\",  \"lookbackMins\" : 0, \"name\" : \"metric-template:$metrictemplate;log-template:$logtemplate\", \"notificationHours\" : [ ], \"useLookback\" : false }, \"canaryHealthCheckHandler\" : {\"@class\" : \"com.netflix.spinnaker.mine.CanaryResultHealthCheckHandler\", \"minimumCanaryResultScore\" : \"$minimumCanaryScore\"}, \"canarySuccessCriteria\" : { \"canaryResultScore\" : \"$canaryResultScore\" },\"combinedCanaryResultStrategy\" : \"AGGREGATE\", \"lifetimeHours\" : \"$lifetimeHours\", \"name\" : \"$username\", \"application\" : \"prodk8\"}, \"canaryDeployments\" : [ { \"@class\" : \".CanaryTaskDeployment\", \"accountName\" : \"my-k8s-account\", \"baseline\" : \"$baseline\", \"baselineStartTimeMs\": "$baselineStartTimeMs", \"canary\" : \"$canary\", \"canaryStartTimeMs\": "$canaryStartTimeMs", \"type\" : \"cluster\" } ], \"watchers\" : [ ]}"
 
 echo "Request body : "
 echo $jsondata
